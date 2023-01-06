@@ -6,6 +6,14 @@ def get_data(fname):
     with open(fname) as fh:
         return fh.readlines()
 
+def get_subset_from_range(rmin, rmax, count) :
+    r = range(rmin, rmax)
+    if len(r) < count :
+        return list(r)
+
+    s = list(np.random.choice(r, size=count, replace=False))
+    return s
+
 def choose_indexes(len, spread, count):
     if len <= count :
         return list(range(len))
@@ -15,9 +23,8 @@ def choose_indexes(len, spread, count):
     base = 0
     if maxbase > base :
         np.random.randint(0, maxbase+1)
-    all = list(range(base, base+spread))
 
-    indexes = list(np.random.choice(all, size=count, replace=False))
+    indexes = get_subset_from_range(base, base+spread, count)
     indexes.sort()
     return indexes
 
@@ -26,6 +33,50 @@ def choose_indexes_by_stride(len, count) :
     basemax = len - 1 - (count -1) * width
     base = np.random.randint(0, basemax+1)
     indexes = [base + i * width for i in range(count)]
+    return indexes
+
+def make_tier_counts(count, parts, floor):
+    if count <= 0:
+        return [0] * parts
+    if parts == 0:
+        return []
+    if parts == 1:
+        return [count]
+
+    divisor = 2 ** parts
+    part = count // divisor
+    if part < floor:
+        part = floor
+
+    tail = make_tier_counts(count - part, parts - 1, floor * 2)
+
+    value = [part] + tail
+    return value
+
+def count_to_index(counts) :
+    start = 0
+    indexes = []
+
+    for c in counts :
+        end = start + c
+        ix = (start, end)
+        indexes.append(ix)
+        start += c
+
+    return indexes
+
+def choose_indexes_by_tier(item_count, tiers, per_tier) :
+    tier_counts = make_tier_counts(item_count, tiers, 1)
+    if item_count == 0 or tiers <= 0 or len(tier_counts) == 0 or tier_counts[-1] <= 0:
+        return choose_indexes_by_stride(item_count, tiers * per_tier)
+
+    index_ranges = count_to_index(tier_counts)
+    indexes = []
+    for l, h in index_ranges:
+        t = get_subset_from_range(l, h, 2)
+        indexes.extend(t)
+
+    indexes.sort()
     return indexes
 
 def split_by_indexes(data, indexes):
@@ -59,7 +110,8 @@ def split(fname, strategy):
 if __name__ == '__main__':
     fname = 'numbers.dat'
     def strategy(n) :
-        return choose_indexes_by_stride(n, 10)
+        #return choose_indexes_by_stride(n, 10)
+        return choose_indexes_by_tier(n, 5, 2)
 
     if len(sys.argv) > 1 :
         fname = sys.argv[1]
