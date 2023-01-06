@@ -6,18 +6,18 @@ def get_data(fname):
     with open(fname) as fh:
         return fh.readlines()
 
-def choose_indexes(len, spread):
-    if len <= 10 :
+def choose_indexes(len, spread, count):
+    if len <= count :
         return list(range(len))
 
-    spread = max(min(len, spread), 10)
+    spread = max(min(len, spread), count)
     maxbase = len - spread
     base = 0
     if maxbase > base :
         np.random.randint(0, maxbase)
     all = list(range(base, base+spread))
 
-    indexes = list(np.random.choice(all, size=10, replace=False))
+    indexes = list(np.random.choice(all, size=count, replace=False))
     indexes.sort()
     return indexes
 
@@ -42,7 +42,7 @@ def split(fname):
     data = get_data(fname)
 
     n = len(data)
-    indexes = choose_indexes(n, n)
+    indexes = choose_indexes(n, n, 10)
 
     subset, remainder = split_by_indexes(data, indexes)
 
