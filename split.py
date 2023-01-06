@@ -14,11 +14,18 @@ def choose_indexes(len, spread, count):
     maxbase = len - spread
     base = 0
     if maxbase > base :
-        np.random.randint(0, maxbase)
+        np.random.randint(0, maxbase+1)
     all = list(range(base, base+spread))
 
     indexes = list(np.random.choice(all, size=count, replace=False))
     indexes.sort()
+    return indexes
+
+def choose_indexes_by_stride(len, count) :
+    width = len // count
+    basemax = len - 1 - (count -1) * width
+    base = np.random.randint(0, basemax+1)
+    indexes = [base + i * width for i in range(count)]
     return indexes
 
 def split_by_indexes(data, indexes):
@@ -38,11 +45,11 @@ def write_remainder(fname, data):
     with open(fname + '.rem', 'w') as fh:
         fh.write(''.join(data))
 
-def split(fname):
+def split(fname, strategy):
     data = get_data(fname)
 
     n = len(data)
-    indexes = choose_indexes(n, n, 10)
+    indexes = strategy(n)
 
     subset, remainder = split_by_indexes(data, indexes)
 
@@ -51,6 +58,10 @@ def split(fname):
 
 if __name__ == '__main__':
     fname = 'numbers.dat'
+    def strategy(n) :
+        return choose_indexes_by_stride(n, 10)
+
     if len(sys.argv) > 1 :
         fname = sys.argv[1]
-    split(fname)
+
+    split(fname, strategy)
