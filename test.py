@@ -14,7 +14,7 @@ def print_state(seq, dq) :
     print(dq, seq)
 
 def next_state(seq, spread) :
-    indexes = split.choose_indexes(len(seq), spread)
+    indexes = split.choose_indexes(len(seq), spread, 10)
     subset, remainder = split.split_by_indexes(seq, indexes)
     subset.sort()
     t = merge.merge_data(remainder, subset, indexes)
