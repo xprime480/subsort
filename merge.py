@@ -1,4 +1,5 @@
 import sys
+import os
 
 def get_base(fname) :
     with open(fname + '.rem') as fh:
@@ -35,6 +36,9 @@ def merge(fname) :
 
     final = merge_data(base, data, indexes)
     write_final(fname, final)
+
+    os.unlink(fname + '.out')
+    os.unlink(fname + '.rem')
 
 if __name__ == '__main__' :
     fname = 'numbers.dat'
