@@ -2,6 +2,8 @@ import sys
 
 import numpy as np
 
+import supercycle
+
 def get_data(fname):
     with open(fname) as fh:
         return fh.readlines()
@@ -79,6 +81,15 @@ def choose_indexes_by_tier(item_count, tiers, per_tier) :
     indexes.sort()
     return indexes
 
+def choose_indexes_by_tier_state(fname, tiers, per_tier) :
+    state = supercycle.SupercycleState(fname)
+    if not state.is_valid():
+        state.initialize(tiers, per_tier)
+
+    indexes = state.next()
+    state.write_state()
+    return indexes
+
 def split_by_indexes(data, indexes):
     subset = [data[i] for i in range(len(data)) if i in indexes]
     remainder = [data[i] for i in range(len(data)) if i not in indexes]
@@ -111,7 +122,8 @@ if __name__ == '__main__':
     fname = 'numbers.dat'
     def strategy(n) :
         #return choose_indexes_by_stride(n, 10)
-        return choose_indexes_by_tier(n, 5, 2)
+        #return choose_indexes_by_tier(n, 5, 2)
+        return choose_indexes_by_tier_state(fname, 5, 2)
 
     if len(sys.argv) > 1 :
         fname = sys.argv[1]
