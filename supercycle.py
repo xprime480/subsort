@@ -17,27 +17,36 @@ class SupercycleState(object) :
         self.state['tiers'] = tiers
         self.state['per_tier'] = per_tier
 
+        self.reinitialize()
+        self.initialize_indexes()
+        self._valid = True
+
+    def reinitialize(self) :
         data = split.get_data(self.fname)
         count = len(data)
 
-        count_per_tier = split.make_tier_counts(count, tiers, per_tier)
-        self.initialize_indexes(count_per_tier)
+        count_per_tier = split.make_tier_counts(count, self.state['tiers'], self.state['per_tier'])
 
         self.state['count_per_tier'] = count_per_tier
-        self._valid = True
+        self.initialize_bases()
 
-    def initialize_indexes(self, counts):
-        indexes = []
+    def initialize_bases(self) :
         bases = []
         sum = 0
-        for c in counts:
-            ix = get_shuffled_range(sum, c)
-            indexes.append(ix)
-
+        for c in self.state['count_per_tier']:
             bases.append(sum)
             sum += c
-
         self.state['bases'] = bases
+
+    def initialize_indexes(self):
+        indexes = []
+        sum = 0
+
+        for c in self.state['count_per_tier']:
+            ix = get_shuffled_range(sum, c)
+            indexes.append(ix)
+            sum += c
+
         self.state['indexes'] = indexes
 
     def read_state(self) :
