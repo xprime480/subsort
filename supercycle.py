@@ -82,14 +82,12 @@ class SupercycleState(object) :
     def next(self) :
         indexes = self.state['indexes']
         per_tier = self.state['per_tier']
-        bases = self.state['bases']
-        count_per_tier = self.state['count_per_tier']
 
         row_index = []
         for i in range(len(indexes)):
             ix = indexes[i]
             if len(ix) < per_tier:
-                ix = self.extend_index(ix, bases[i], count_per_tier[i], per_tier)
+                ix = self.extend_index(ix, i)
 
             t = ix[:per_tier]
             row_index.extend(t)
@@ -102,10 +100,12 @@ class SupercycleState(object) :
         row_index.sort()
         return row_index
 
-    def extend_index(self, stub, base, count, hold):
-        rest = get_shuffled_range(base, count)
+    def extend_index(self, stub, index):
+        self.reinitialize()
+
+        rest = get_shuffled_range(self.state['bases'][index], self.state['count_per_tier'][index])
         tail = []
-        while len(stub) < hold and rest:
+        while len(stub) < self.state['per_tier'] and rest:
             r = rest[0]
             if r in stub:
                 tail.append(r)
