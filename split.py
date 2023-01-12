@@ -45,7 +45,7 @@ def make_tier_counts(count, parts, floor):
     if parts == 1:
         return [count]
 
-    divisor = 2 ** parts
+    divisor = 2 ** parts - 1
     part = count // divisor
     if part < floor:
         part = floor
