@@ -6,72 +6,77 @@ import math
 import split
 
 class SupercycleState(object) :
-    def __init__(self, fname) :
+    def __init__(self, fname, tiers, per_tier):
         self.fname = fname
-        self.state = dict()
-        self.fname = fname
-        self._valid = False
-        self.read_state()
+        self.tiers = tiers
+        self.per_tier = per_tier
+        self.state = dict([('exclusions', [])])
+        self.read_old_state()
+        self.make_state_from_data()
 
-    def initialize(self, tiers, per_tier) :
-        self.state['tiers'] = tiers
-        self.state['per_tier'] = per_tier
-
+    def make_state_from_data(self) :
         self.reinitialize()
         self.initialize_indexes()
-        self._valid = True
 
     def reinitialize(self) :
         data = split.get_data(self.fname)
+        dtemp = [(i, s.rstrip()) for i, s in enumerate(data)]
+        self.base_data = [v for _,v in dtemp]
+        self.index_to_data = dict(dtemp)
         count = len(data)
 
-        count_per_tier = split.make_tier_counts(count, self.state['tiers'], self.state['per_tier'])
-
-        self.state['count_per_tier'] = count_per_tier
+        count_per_tier = split.make_tier_counts(count, self.tiers, self.per_tier)
+        self.count_per_tier = count_per_tier
         self.initialize_bases()
+
+        self.state['exclusions'] = [x for x in self.state['exclusions'] if x in self.base_data]
 
     def initialize_bases(self) :
         bases = []
         sum = 0
-        for c in self.state['count_per_tier']:
+        for c in self.count_per_tier:
             bases.append(sum)
             sum += c
-        self.state['bases'] = bases
+        self.bases = bases
 
     def initialize_indexes(self):
         indexes = []
+        alt_indexes = []
         sum = 0
 
-        for c in self.state['count_per_tier']:
-            ix = get_shuffled_range(sum, c)
+        for c in self.count_per_tier:
+            ix = [i for i in get_shuffled_range(sum, c) if not self.is_excluded(i)]
+            alt_ix = [(i, self.index_to_data[i]) for i in ix]
             indexes.append(ix)
+            alt_indexes.append(alt_ix)
             sum += c
 
-        self.state['indexes'] = indexes
+        self.indexes = indexes
+        self.alt_indexes = alt_indexes
 
-    def read_state(self) :
+    def read_old_state(self) :
         try :
             with open(self.fname + '.state') as fh :
                 data = fh.read()
                 d = eval(data)
                 if type(d) == type(dict()) :
-                    keys = ['tiers', 'per_tier', 'bases', 'indexes', 'count_per_tier']
+                    keys = ['exclusions']
                     for k in keys :
                         if k not in d :
                             return
-                
-            d.update(self.state)
+
+            self.state.update(d)
             self.state = d
             self._valid = True
 
         except Exception as ex :
             print('Unable to open statefile', ex)
 
-    def write_state(self) :
-        if not self._valid :
-            print('Not saving state because it is not valid')
-            return
+    def is_excluded(self, index) :
+        data = self.index_to_data[index]
+        return data in self.state['exclusions']
 
+    def write_state(self) :
         with open(self.fname + '.state', 'w') as fh :
             fh.write(repr(self.state))
             fh.write('\n')
@@ -80,8 +85,8 @@ class SupercycleState(object) :
         return self._valid
 
     def next(self) :
-        indexes = self.state['indexes']
-        per_tier = self.state['per_tier']
+        indexes = self.indexes
+        per_tier = self.per_tier
 
         row_index = []
         for i in range(len(indexes)):
@@ -95,17 +100,15 @@ class SupercycleState(object) :
             u = ix[per_tier:]
             indexes[i] = u
 
-        self.state['indexes'] = indexes
-
+        self.add_to_exclusions(row_index)
         row_index.sort()
         return row_index
 
     def extend_index(self, stub, index):
-        self.reinitialize()
-
-        rest = get_shuffled_range(self.state['bases'][index], self.state['count_per_tier'][index])
+        rest = get_shuffled_range(self.bases[index], self.count_per_tier[index])
+        self.delete_from_exclusions(rest)
         tail = []
-        while len(stub) < self.state['per_tier'] and rest:
+        while len(stub) < self.per_tier and rest:
             r = rest[0]
             if r in stub:
                 tail.append(r)
@@ -118,6 +121,15 @@ class SupercycleState(object) :
 
         return stub
 
+    def add_to_exclusions(self, indexes) :
+        data = [self.index_to_data[i] for i in indexes]
+        data = [d for d in data if d not in self.state['exclusions']]
+        self.state['exclusions'].extend(data)
+
+    def delete_from_exclusions(self, indexes) :
+        data = [self.index_to_data[i] for i in indexes]
+        self.state['exclusions'] = [d for d in self.state['exclusions'] if d not in data]
+
 def get_shuffled_range(start, count) :
         ix = list(range(start,start+count))
         np.random.shuffle(ix)
@@ -128,11 +140,13 @@ if __name__ == '__main__' :
     if len(sys.argv) > 1:
         fname = sys.argv[1]
 
-    state = SupercycleState(fname)
-    if not state.is_valid() :
-        state.initialize(5, 2)
+    count = 0
+    if len(sys.argv) > 2 :
+        count = int(sys.argv[2])
 
-    for _ in range(20) : 
+    state = SupercycleState(fname, 5, 2)
+
+    for _ in range(count) : 
         sample = state.next()
         print(sample)
     state.write_state()

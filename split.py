@@ -82,10 +82,7 @@ def choose_indexes_by_tier(item_count, tiers, per_tier) :
     return indexes
 
 def choose_indexes_by_tier_state(fname, tiers, per_tier) :
-    state = supercycle.SupercycleState(fname)
-    if not state.is_valid():
-        state.initialize(tiers, per_tier)
-
+    state = supercycle.SupercycleState(fname, tiers, per_tier)
     indexes = state.next()
     state.write_state()
     return indexes
@@ -125,7 +122,13 @@ if __name__ == '__main__':
         #return choose_indexes_by_tier(n, 5, 2)
         return choose_indexes_by_tier_state(fname, 5, 2)
 
+    def alt(n) :
+        return choose_indexes_by_tier_state_v2(fname, 5, 2)
+
     if len(sys.argv) > 1 :
         fname = sys.argv[1]
 
-    split(fname, strategy)
+    if len(sys.argv) > 2 :
+        split(fname, alt)
+    else :
+        split(fname, strategy)
