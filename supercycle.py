@@ -10,7 +10,6 @@ class SupercycleState(object) :
         self.fname = fname
         self.tiers = tiers
         self.per_tier = per_tier
-        self.state = dict([('exclusions', [])])
         self.read_old_state()
         self.make_state_from_data()
 
@@ -29,7 +28,7 @@ class SupercycleState(object) :
         self.count_per_tier = count_per_tier
         self.initialize_bases()
 
-        self.state['exclusions'] = [x for x in self.state['exclusions'] if x in self.base_data]
+        self.exclusions.intersection_update(set(self.base_data))
 
     def initialize_bases(self) :
         bases = []
@@ -56,30 +55,21 @@ class SupercycleState(object) :
 
     def read_old_state(self) :
         try :
-            with open(self.fname + '.state') as fh :
-                data = fh.read()
-                d = eval(data)
-                if type(d) == type(dict()) :
-                    keys = ['exclusions']
-                    for k in keys :
-                        if k not in d :
-                            return
-
-            self.state.update(d)
-            self.state = d
-            self._valid = True
-
+            self.exclusions = set([x.rstrip() for x in split.get_data(self.fname + '.state')])
+            self.exclusions.difference_update(set(['']))
         except Exception as ex :
             print('Unable to open statefile', ex)
+            self.exclusions = set()
 
     def is_excluded(self, index) :
         data = self.index_to_data[index]
-        return data in self.state['exclusions']
+        return data in self.exclusions
 
     def write_state(self) :
         with open(self.fname + '.state', 'w') as fh :
-            fh.write(repr(self.state))
-            fh.write('\n')
+            for e in self.exclusions :
+                fh.write(e)
+                fh.write('\n')
 
     def is_valid(self) :
         return self._valid
@@ -122,13 +112,12 @@ class SupercycleState(object) :
         return stub
 
     def add_to_exclusions(self, indexes) :
-        data = [self.index_to_data[i] for i in indexes]
-        data = [d for d in data if d not in self.state['exclusions']]
-        self.state['exclusions'].extend(data)
+        data = set([self.index_to_data[i] for i in indexes])
+        self.exclusions.update(data)
 
     def delete_from_exclusions(self, indexes) :
-        data = [self.index_to_data[i] for i in indexes]
-        self.state['exclusions'] = [d for d in self.state['exclusions'] if d not in data]
+        data = set([self.index_to_data[i] for i in indexes])
+        self.exclusions.difference_update(data)
 
 def get_shuffled_range(start, count) :
         ix = list(range(start,start+count))
