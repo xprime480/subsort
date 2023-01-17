@@ -71,9 +71,6 @@ class SupercycleState(object) :
                 fh.write(e)
                 fh.write('\n')
 
-    def is_valid(self) :
-        return self._valid
-
     def next(self) :
         indexes = self.indexes
         per_tier = self.per_tier
