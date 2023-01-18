@@ -19,16 +19,14 @@ class SupercycleState(object) :
 
     def reinitialize(self) :
         data = split.get_data(self.fname)
-        dtemp = [(i, s.rstrip()) for i, s in enumerate(data)]
-        self.base_data = [v for _,v in dtemp]
-        self.index_to_data = dict(dtemp)
+        self.data = [v.rstrip() for v in data]
         count = len(data)
 
         count_per_tier = split.make_tier_counts(count, self.tiers, self.per_tier)
         self.count_per_tier = count_per_tier
         self.initialize_bases()
 
-        self.exclusions.intersection_update(set(self.base_data))
+        self.exclusions.intersection_update(set(self.data))
 
     def initialize_bases(self) :
         bases = []
@@ -40,18 +38,14 @@ class SupercycleState(object) :
 
     def initialize_indexes(self):
         indexes = []
-        alt_indexes = []
         sum = 0
 
         for c in self.count_per_tier:
             ix = [i for i in get_shuffled_range(sum, c) if not self.is_excluded(i)]
-            alt_ix = [(i, self.index_to_data[i]) for i in ix]
             indexes.append(ix)
-            alt_indexes.append(alt_ix)
             sum += c
 
         self.indexes = indexes
-        self.alt_indexes = alt_indexes
 
     def read_old_state(self) :
         try :
@@ -62,7 +56,7 @@ class SupercycleState(object) :
             self.exclusions = set()
 
     def is_excluded(self, index) :
-        data = self.index_to_data[index]
+        data = self.data[index]
         return data in self.exclusions
 
     def write_state(self) :
@@ -109,11 +103,11 @@ class SupercycleState(object) :
         return stub
 
     def add_to_exclusions(self, indexes) :
-        data = set([self.index_to_data[i] for i in indexes])
+        data = set([self.data[i] for i in indexes])
         self.exclusions.update(data)
 
     def delete_from_exclusions(self, indexes) :
-        data = set([self.index_to_data[i] for i in indexes])
+        data = set([self.data[i] for i in indexes])
         self.exclusions.difference_update(data)
 
 def get_shuffled_range(start, count) :
