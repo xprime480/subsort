@@ -6,12 +6,24 @@ import math
 import split
 
 class SupercycleState(object) :
-    def __init__(self, fname, tiers, per_tier):
+    def __init__(self, fname, number_of_tiers, total_count):
         self.fname = fname
-        self.tiers = tiers
-        self.per_tier = per_tier
+        self.tiers = number_of_tiers
+        self.compute_per_tier(number_of_tiers, total_count)
         self.read_old_state()
         self.make_state_from_data()
+
+    def compute_per_tier(self, number_of_tiers, total_count) :
+        count_per_tier = []
+        for _ in range(number_of_tiers) :
+            if total_count <= 0 :
+                count_per_tier.append(0)
+            else :
+                this_tier_count = math.ceil(total_count / number_of_tiers)
+                number_of_tiers -= 1
+                total_count -= this_tier_count
+                count_per_tier.append(this_tier_count)
+        self.count_per_tier = count_per_tier
 
     def make_state_from_data(self) :
         self.reinitialize()
@@ -22,8 +34,7 @@ class SupercycleState(object) :
         self.data = [v.rstrip() for v in data]
         count = len(data)
 
-        count_per_tier = split.make_tier_counts(count, self.tiers, self.per_tier)
-        self.count_per_tier = count_per_tier
+        self.tier_sizes = split.compute_tier_sizes(count, self.tiers, self.count_per_tier[0])
         self.initialize_bases()
 
         self.exclusions.intersection_update(set(self.data))
@@ -31,7 +42,7 @@ class SupercycleState(object) :
     def initialize_bases(self) :
         bases = []
         sum = 0
-        for c in self.count_per_tier:
+        for c in self.tier_sizes:
             bases.append(sum)
             sum += c
         self.bases = bases
@@ -40,7 +51,7 @@ class SupercycleState(object) :
         indexes = []
         sum = 0
 
-        for c in self.count_per_tier:
+        for c in self.tier_sizes:
             ix = [i for i in get_shuffled_range(sum, c) if not self.is_excluded(i)]
             indexes.append(ix)
             sum += c
@@ -67,29 +78,30 @@ class SupercycleState(object) :
 
     def next(self) :
         indexes = self.indexes
-        per_tier = self.per_tier
+        per_tier = self.count_per_tier
 
         row_index = []
-        for i in range(len(indexes)):
+        for i in range(len(indexes)) :
+            needed = per_tier[i]
             ix = indexes[i]
-            if len(ix) < per_tier:
-                ix = self.extend_index(ix, i)
+            if len(ix) < needed :
+                ix = self.extend_index(ix, i, needed)
 
-            t = ix[:per_tier]
+            t = ix[:needed]
             row_index.extend(t)
 
-            u = ix[per_tier:]
+            u = ix[needed:]
             indexes[i] = u
 
         self.add_to_exclusions(row_index)
         row_index.sort()
         return row_index
 
-    def extend_index(self, stub, index):
-        rest = get_shuffled_range(self.bases[index], self.count_per_tier[index])
+    def extend_index(self, stub, index, needed):
+        rest = get_shuffled_range(self.bases[index], self.tier_sizes[index])
         self.delete_from_exclusions(rest)
         tail = []
-        while len(stub) < self.per_tier and rest:
+        while len(stub) < needed and rest:
             r = rest[0]
             if r in stub:
                 tail.append(r)
@@ -124,7 +136,7 @@ if __name__ == '__main__' :
     if len(sys.argv) > 2 :
         count = int(sys.argv[2])
 
-    state = SupercycleState(fname, 5, 2)
+    state = SupercycleState(fname, 5, 7)
 
     for _ in range(count) : 
         sample = state.next()

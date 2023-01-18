@@ -37,22 +37,25 @@ def choose_indexes_by_stride(len, count) :
     indexes = [base + i * width for i in range(count)]
     return indexes
 
-def make_tier_counts(count, parts, floor):
-    if count <= 0:
-        return [0] * parts
-    if parts == 0:
+def compute_tier_sizes(number_of_items, number_of_tiers, minimum_for_first_tier):
+    if number_of_items <= 0:
+        return [0] * number_of_tiers
+    if number_of_tiers == 0:
         return []
-    if parts == 1:
-        return [count]
+    if number_of_tiers == 1:
+        return [number_of_items]
 
-    divisor = 2 ** parts - 1
-    part = count // divisor
-    if part < floor:
-        part = min(count, floor)
+    divisor = 2 ** number_of_tiers - 1
+    number_for_first_tier = number_of_items // divisor
+    if number_for_first_tier < minimum_for_first_tier:
+        number_for_first_tier = min(number_of_items, minimum_for_first_tier)
 
-    tail = make_tier_counts(count - part, parts - 1, floor * 2)
+    number_of_items -= number_for_first_tier
+    number_of_tiers -= 1
+    minimum_for_first_tier *= 2
+    tail = compute_tier_sizes(number_of_items, number_of_tiers, minimum_for_first_tier)
 
-    value = [part] + tail
+    value = [number_for_first_tier] + tail
     return value
 
 def count_to_index(counts) :
@@ -67,12 +70,12 @@ def count_to_index(counts) :
 
     return indexes
 
-def choose_indexes_by_tier(item_count, tiers, per_tier) :
-    tier_counts = make_tier_counts(item_count, tiers, 1)
-    if item_count == 0 or tiers <= 0 or len(tier_counts) == 0 or tier_counts[-1] <= 0:
-        return choose_indexes_by_stride(item_count, tiers * per_tier)
+def choose_indexes_by_tier(number_of_items, number_of_tiers, per_tier) :
+    tier_sizes = compute_tier_sizes(number_of_items, number_of_tiers, 1)
+    if number_of_items == 0 or number_of_tiers <= 0 or len(tier_sizes) == 0 or tier_sizes[-1] <= 0:
+        return choose_indexes_by_stride(number_of_items, number_of_tiers * per_tier)
 
-    index_ranges = count_to_index(tier_counts)
+    index_ranges = count_to_index(tier_sizes)
     indexes = []
     for l, h in index_ranges:
         t = get_subset_from_range(l, h, 2)
@@ -81,8 +84,8 @@ def choose_indexes_by_tier(item_count, tiers, per_tier) :
     indexes.sort()
     return indexes
 
-def choose_indexes_by_tier_state(fname, tiers, per_tier) :
-    state = supercycle.SupercycleState(fname, tiers, per_tier)
+def choose_indexes_by_tier_state(fname, number_of_tiers, total_count) :
+    state = supercycle.SupercycleState(fname, number_of_tiers, total_count)
     indexes = state.next()
     state.write_state()
     return indexes
@@ -92,7 +95,7 @@ def split_by_indexes(data, indexes):
     remainder = [data[i] for i in range(len(data)) if i not in indexes]
     return subset, remainder
 
-def write_subset(fname, subset, indexes):
+def write_chosen(fname, subset, indexes):
     with open(fname + '.out', 'w') as fh:
         fh.write('# ')
         fh.write(' '.join([str(i) for i in indexes]))
@@ -110,9 +113,9 @@ def split(fname, strategy):
     n = len(data)
     indexes = strategy(n)
 
-    subset, remainder = split_by_indexes(data, indexes)
+    chosen, remainder = split_by_indexes(data, indexes)
 
-    write_subset(fname, subset, indexes)
+    write_chosen(fname, chosen, indexes)
     write_remainder(fname, remainder)
 
 if __name__ == '__main__':
@@ -120,15 +123,9 @@ if __name__ == '__main__':
     def strategy(n) :
         #return choose_indexes_by_stride(n, 10)
         #return choose_indexes_by_tier(n, 5, 2)
-        return choose_indexes_by_tier_state(fname, 5, 2)
-
-    def alt(n) :
-        return choose_indexes_by_tier_state_v2(fname, 5, 2)
+        return choose_indexes_by_tier_state(fname, 5, 10)
 
     if len(sys.argv) > 1 :
         fname = sys.argv[1]
 
-    if len(sys.argv) > 2 :
-        split(fname, alt)
-    else :
-        split(fname, strategy)
+    split(fname, strategy)
