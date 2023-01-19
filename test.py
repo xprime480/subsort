@@ -63,4 +63,6 @@ def dotest() :
                 break
 
 if __name__ == '__main__' :
-    dotest()
+    #dotest()
+    print(split.compute_tier_sizes(3591, 7, 2, 2.0))
+    print(split.compute_tier_sizes(3591, 7, 2, 1.5))

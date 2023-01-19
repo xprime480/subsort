@@ -1,4 +1,5 @@
 import sys
+import math
 
 import numpy as np
 
@@ -37,7 +38,7 @@ def choose_indexes_by_stride(len, count) :
     indexes = [base + i * width for i in range(count)]
     return indexes
 
-def compute_tier_sizes(number_of_items, number_of_tiers, minimum_for_first_tier):
+def compute_tier_sizes(number_of_items, number_of_tiers, minimum_for_first_tier, tier_size_ratio=2.0):
     if number_of_items <= 0:
         return [0] * number_of_tiers
     if number_of_tiers == 0:
@@ -45,15 +46,15 @@ def compute_tier_sizes(number_of_items, number_of_tiers, minimum_for_first_tier)
     if number_of_tiers == 1:
         return [number_of_items]
 
-    divisor = 2 ** number_of_tiers - 1
-    number_for_first_tier = number_of_items // divisor
+    divisor = (tier_size_ratio ** number_of_tiers - 1) / (tier_size_ratio - 1)
+    number_for_first_tier = math.floor(number_of_items // divisor)
     if number_for_first_tier < minimum_for_first_tier:
         number_for_first_tier = min(number_of_items, minimum_for_first_tier)
 
     number_of_items -= number_for_first_tier
     number_of_tiers -= 1
-    minimum_for_first_tier *= 2
-    tail = compute_tier_sizes(number_of_items, number_of_tiers, minimum_for_first_tier)
+    minimum_for_first_tier = math.ceil(minimum_for_first_tier * tier_size_ratio)
+    tail = compute_tier_sizes(number_of_items, number_of_tiers, minimum_for_first_tier, tier_size_ratio)
 
     value = [number_for_first_tier] + tail
     return value
@@ -123,7 +124,7 @@ if __name__ == '__main__':
     def strategy(n) :
         #return choose_indexes_by_stride(n, 10)
         #return choose_indexes_by_tier(n, 5, 2)
-        return choose_indexes_by_tier_state(fname, 5, 10)
+        return choose_indexes_by_tier_state(fname, 7, 10)
 
     if len(sys.argv) > 1 :
         fname = sys.argv[1]
