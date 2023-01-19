@@ -46,7 +46,9 @@ def compute_tier_sizes(number_of_items, number_of_tiers, minimum_for_first_tier,
     if number_of_tiers == 1:
         return [number_of_items]
 
-    divisor = (tier_size_ratio ** number_of_tiers - 1) / (tier_size_ratio - 1)
+    divisor = number_of_tiers
+    if tier_size_ratio != 1 :
+        divisor = (tier_size_ratio ** number_of_tiers - 1) / (tier_size_ratio - 1)
     number_for_first_tier = math.floor(number_of_items // divisor)
     if number_for_first_tier < minimum_for_first_tier:
         number_for_first_tier = min(number_of_items, minimum_for_first_tier)
