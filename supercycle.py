@@ -3,7 +3,7 @@ import sys
 import numpy as np 
 import math
 
-import split
+import splitutils
 
 class SupercycleState(object) :
     def __init__(self, fname, number_of_tiers, total_count):
@@ -30,11 +30,10 @@ class SupercycleState(object) :
         self.initialize_indexes()
 
     def reinitialize(self) :
-        data = split.get_data(self.fname)
-        self.data = [v.rstrip() for v in data]
-        count = len(data)
+        self.data = splitutils.get_data(self.fname)
+        count = len(self.data)
 
-        self.tier_sizes = split.compute_tier_sizes(count, self.tiers, self.count_per_tier[0])
+        self.tier_sizes = splitutils.make_geometric_series(count, self.tiers, self.count_per_tier[0])
         self.initialize_bases()
 
         self.exclusions.intersection_update(set(self.data))
@@ -60,7 +59,7 @@ class SupercycleState(object) :
 
     def read_old_state(self) :
         try :
-            self.exclusions = set([x.rstrip() for x in split.get_data(self.fname + '.state')])
+            self.exclusions = set([x.rstrip() for x in splitutils.get_data(self.fname + '.state')])
             self.exclusions.difference_update(set(['']))
         except Exception as ex :
             print('Unable to open statefile', ex)
