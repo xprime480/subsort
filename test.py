@@ -68,3 +68,6 @@ if __name__ == '__main__' :
     print(split.compute_tier_sizes(3592, 7, 2, 1.5))
     print(split.compute_tier_sizes(3592, 7, 2, 1.0))
     print(split.compute_tier_sizes(3592, 7, 2, 0.5))
+    print(split.compute_tier_sizes(3592, 7, 2, 0.0))
+    print(split.compute_tier_sizes(3592, 7, 2, -2))
+    print(split.compute_tier_sizes(3592, 7, 2, 4.2))

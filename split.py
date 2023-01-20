@@ -41,14 +41,16 @@ def choose_indexes_by_stride(len, count) :
 def compute_tier_sizes(number_of_items, number_of_tiers, minimum_for_first_tier, tier_size_ratio=2.0):
     if number_of_items <= 0:
         return [0] * number_of_tiers
-    if number_of_tiers == 0:
+    elif number_of_tiers == 0:
         return []
-    if number_of_tiers == 1:
+    elif number_of_tiers == 1:
         return [number_of_items]
+    elif tier_size_ratio <= 0 :
+        return [number_of_items] + [0] * (number_of_tiers - 1)
 
     divisor = number_of_tiers
     if tier_size_ratio != 1 :
-        divisor = (tier_size_ratio ** number_of_tiers - 1) / (tier_size_ratio - 1)
+        divisor = abs((tier_size_ratio ** number_of_tiers - 1) / (tier_size_ratio - 1))
     number_for_first_tier = math.floor(number_of_items // divisor)
     if number_for_first_tier < minimum_for_first_tier:
         number_for_first_tier = min(number_of_items, minimum_for_first_tier)
@@ -124,8 +126,6 @@ def split(fname, strategy):
 if __name__ == '__main__':
     fname = 'numbers.dat'
     def strategy(n) :
-        #return choose_indexes_by_stride(n, 10)
-        #return choose_indexes_by_tier(n, 5, 2)
         return choose_indexes_by_tier_state(fname, 7, 10)
 
     if len(sys.argv) > 1 :
