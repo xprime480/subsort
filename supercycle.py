@@ -1,50 +1,22 @@
 import sys
+import itertools
 
 import numpy as np 
-import math
 
 import splitutils
+import splitdata
 
 class SupercycleState(object) :
-    def __init__(self, fname, number_of_tiers, total_count):
-        self.fname = fname
+    def __init__(self, dao, number_of_tiers, total_count):
+        self.dao = dao
         self.tiers = number_of_tiers
-        self.compute_per_tier(number_of_tiers, total_count)
+        self.count_per_tier = splitutils.make_geometric_series(total_count, number_of_tiers, 1, 1.0)
         self.read_old_state()
-        self.make_state_from_data()
-
-    def compute_per_tier(self, number_of_tiers, total_count) :
-        count_per_tier = []
-        for _ in range(number_of_tiers) :
-            if total_count <= 0 :
-                count_per_tier.append(0)
-            else :
-                this_tier_count = math.ceil(total_count / number_of_tiers)
-                number_of_tiers -= 1
-                total_count -= this_tier_count
-                count_per_tier.append(this_tier_count)
-        self.count_per_tier = count_per_tier
-
-    def make_state_from_data(self) :
-        self.reinitialize()
-        self.initialize_indexes()
-
-    def reinitialize(self) :
-        self.data = splitutils.get_data(self.fname)
-        count = len(self.data)
-
-        self.tier_sizes = splitutils.make_geometric_series(count, self.tiers, self.count_per_tier[0], 1.618)
-        self.initialize_bases()
-
+        self.data = self.dao.get_data()
+        self.tier_sizes = splitutils.make_geometric_series(len(self.data), self.tiers, self.count_per_tier[0])
+        self.bases = list(itertools.accumulate([0] + self.tier_sizes[:-1]))
         self.exclusions.intersection_update(set(self.data))
-
-    def initialize_bases(self) :
-        bases = []
-        sum = 0
-        for c in self.tier_sizes:
-            bases.append(sum)
-            sum += c
-        self.bases = bases
+        self.initialize_indexes()
 
     def initialize_indexes(self):
         indexes = []
@@ -57,23 +29,20 @@ class SupercycleState(object) :
 
         self.indexes = indexes
 
-    def read_old_state(self) :
-        try :
-            self.exclusions = set([x.rstrip() for x in splitutils.get_data(self.fname + '.state')])
-            self.exclusions.difference_update(set(['']))
-        except Exception as ex :
-            print('Unable to open statefile', ex)
-            self.exclusions = set()
-
     def is_excluded(self, index) :
         data = self.data[index]
         return data in self.exclusions
 
-    def write_state(self) :
-        with open(self.fname + '.state', 'w') as fh :
-            for e in self.exclusions :
-                fh.write(e)
-                fh.write('\n')
+    def read_old_state(self):
+        try:
+            self.exclusions = set(self.dao.get_state())
+            self.exclusions.difference_update(set(['']))
+        except Exception as ex:
+            print('Unable to open statefile', ex)
+            self.exclusions = set()
+
+    def write_state(self):
+        self.dao.set_state(self.exclusions)
 
     def next(self) :
         indexes = self.indexes
@@ -135,7 +104,8 @@ if __name__ == '__main__' :
     if len(sys.argv) > 2 :
         count = int(sys.argv[2])
 
-    state = SupercycleState(fname, 5, 7)
+    dao = splitdata.SplitData(fname)
+    state = SupercycleState(dao, 5, 7)
 
     for _ in range(count) : 
         sample = state.next()

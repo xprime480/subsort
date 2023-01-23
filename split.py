@@ -4,6 +4,7 @@ import numpy as np
 
 import supercycle
 import splitutils
+import splitdata
 
 def choose_indexes(len, spread, count):
     if len <= count :
@@ -40,43 +41,25 @@ def choose_indexes_by_tier(number_of_items, number_of_tiers, per_tier) :
     indexes.sort()
     return indexes
 
-def choose_indexes_by_tier_state(fname, number_of_tiers, total_count) :
-    state = supercycle.SupercycleState(fname, number_of_tiers, total_count)
+def choose_indexes_by_tier_state(dao, number_of_tiers, total_count) :
+    state = supercycle.SupercycleState(dao, number_of_tiers, total_count)
     indexes = state.next()
     state.write_state()
     return indexes
 
-def write_chosen(fname, subset, indexes):
-    with open(fname + '.out', 'w') as fh:
-        fh.write('# ')
-        fh.write(' '.join([str(i) for i in indexes]))
-        fh.write('\n')
-
-        fh.write('\n'.join(subset))
-        fh.write('\n')
-
-def write_remainder(fname, data):
-    with open(fname + '.rem', 'w') as fh:
-        fh.write('\n'.join(data))
-        fh.write('\n')
-
-def split(fname, strategy):
-    data = splitutils.get_data(fname)
-
-    n = len(data)
-    indexes = strategy(n)
-
-    included, excluded = splitutils.partition_by_index(data, indexes)
-
-    write_chosen(fname, included, indexes)
-    write_remainder(fname, excluded)
+def split(dao, strategy):
+    indexes = strategy(dao)
+    included, excluded = splitutils.partition_by_index(dao.get_data(), indexes)
+    dao.set_included(included, indexes)
+    dao.set_excluded(excluded)
 
 if __name__ == '__main__':
     fname = 'numbers.dat'
-    def strategy(n) :
-        return choose_indexes_by_tier_state(fname, 10, 10)
+    def strategy(dao) :
+        return choose_indexes_by_tier_state(dao, 10, 10)
 
     if len(sys.argv) > 1 :
         fname = sys.argv[1]
 
-    split(fname, strategy)
+    dao = splitdata.SplitData(fname)
+    split(dao, strategy)

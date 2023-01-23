@@ -1,47 +1,41 @@
 import sys
-import os
 
-def get_base(fname) :
-    with open(fname + '.rem') as fh:
-        return fh.readlines()
+import splitdata
 
-def get_data(fname) :
-    with open(fname + '.out') as fh :
-        data = fh.readlines()
+def get_included(dao) :
+    data = dao.get_included()
 
-    indexline = data[0][2:-1]
+    indexline = data[0][2:]
     data = data[1:]
 
     indexes = [int(x) for x in indexline.split(' ')]
 
     return data, indexes
 
-def merge_data(base, data, indexes) :
+def merge_data(excluded, included, indexes) :
     indexes.sort()
-    stop = min(len(data), len(indexes))
+    stop = min(len(included), len(indexes))
     for i in range(stop) :
         where = indexes[i]
-        what = data[i]
-        base.insert(where, what)
+        what = included[i]
+        excluded.insert(where, what)
     
-    return base
+    return excluded
 
-def write_final(fname, data) :
-    with open(fname, 'w') as fh :
-        fh.write(''.join(data))
+def merge(dao) :
+    excluded = dao.get_excluded()
+    included, indexes = get_included(dao)
 
-def merge(fname) :
-    base = get_base(fname)
-    data, indexes = get_data(fname)
+    final = merge_data(excluded, included, indexes)
+    dao.set_data(final)
 
-    final = merge_data(base, data, indexes)
-    write_final(fname, final)
-
-    os.unlink(fname + '.out')
-    os.unlink(fname + '.rem')
+    dao.dispose_included()
+    dao.dispose_excluded()
 
 if __name__ == '__main__' :
     fname = 'numbers.dat'
     if len(sys.argv) > 1:
         fname = sys.argv[1]
-    merge(fname)
+
+    dao = splitdata.SplitData(fname)
+    merge(dao)

@@ -1,5 +1,6 @@
 import math
 import itertools
+import os
 
 import numpy as np
 
@@ -97,3 +98,19 @@ def partition_by_index(data, indexes):
         else :
             excluded.append(v)
     return included, excluded
+
+def write_or_unlink(data, fname, writer):
+    """Write DATA to FNAME if there is data, else unlink FNAME
+    
+    Write the data using WRITER.
+
+    Catch exceptions if FNAME does not exist and needs to be deleted.
+    """
+    if data:
+        with open(fname, 'w') as fh:
+            writer(fh)
+    else:
+        try:
+            os.unlink(fname)
+        except:
+            pass
