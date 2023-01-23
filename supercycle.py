@@ -33,7 +33,7 @@ class SupercycleState(object) :
         self.data = splitutils.get_data(self.fname)
         count = len(self.data)
 
-        self.tier_sizes = splitutils.make_geometric_series(count, self.tiers, self.count_per_tier[0])
+        self.tier_sizes = splitutils.make_geometric_series(count, self.tiers, self.count_per_tier[0], 1.618)
         self.initialize_bases()
 
         self.exclusions.intersection_update(set(self.data))
