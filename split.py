@@ -74,7 +74,7 @@ def split(fname, strategy):
 if __name__ == '__main__':
     fname = 'numbers.dat'
     def strategy(n) :
-        return choose_indexes_by_tier_state(fname, 7, 10)
+        return choose_indexes_by_tier_state(fname, 10, 10)
 
     if len(sys.argv) > 1 :
         fname = sys.argv[1]
