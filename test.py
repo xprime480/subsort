@@ -6,8 +6,8 @@ import numpy as np
 
 def compute_dq(seq) :
     diffs = [i - seq[i] for i in range(len(seq))]
-    dq = sum([diff*diff for diff in diffs])
-    #dq = sum([abs(x) for x in t])
+    #dq = sum([diff*diff for diff in diffs])
+    dq = sum([abs(diff) for diff in diffs])
 
     return dq #// 2
 
