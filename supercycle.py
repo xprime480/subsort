@@ -9,14 +9,28 @@ import splitdata
 class SupercycleState(object) :
     def __init__(self, dao, number_of_tiers, total_count):
         self.dao = dao
-        self.tiers = number_of_tiers
-        self.count_per_tier = splitutils.make_geometric_series(total_count, number_of_tiers, 1, 1.0)
         self.read_old_state()
         self.data = self.dao.get_data()
-        self.tier_sizes = splitutils.make_geometric_series(len(self.data), self.tiers, self.count_per_tier[0], 1.618)
+
+        self.compute_tier_data(number_of_tiers, total_count)
+
         self.bases = list(itertools.accumulate([0] + self.tier_sizes[:-1]))
         self.exclusions.intersection_update(set(self.data))
         self.initialize_indexes()
+
+    def compute_tier_data(self, number_of_tiers, total_count) :
+        data_len = len(self.data)
+        while number_of_tiers > 0 :
+            count_per_tier = splitutils.make_geometric_series(total_count, number_of_tiers, 1, 1.0)
+            tier_sizes = splitutils.make_geometric_series(data_len, number_of_tiers, count_per_tier[0], 1.618)
+            if 0 not in tier_sizes :
+                break
+            tier_sizes = [x for x in tier_sizes if x > 0]
+            number_of_tiers = len(tier_sizes)
+
+        self.tiers = number_of_tiers
+        self.count_per_tier = count_per_tier
+        self.tier_sizes = tier_sizes
 
     def initialize_indexes(self):
         indexes = []
