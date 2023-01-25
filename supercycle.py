@@ -67,6 +67,8 @@ class SupercycleState(object) :
         indexes = self.indexes
         per_tier = self.count_per_tier
 
+        self.dao.log('Initial index sizes: {0}'.format([len(ix) for ix in indexes]))
+
         row_index = []
         for i in range(len(indexes)) :
             needed = per_tier[i]
@@ -85,6 +87,7 @@ class SupercycleState(object) :
         return row_index
 
     def extend_index(self, stub, index, needed):
+        self.dao.log('Extending index {0} ({1} - {2})'.format(index, self.bases[index], self.bases[index] + self.tier_sizes[index]))
         rest = get_shuffled_range(self.bases[index], self.tier_sizes[index])
         self.delete_from_exclusions(rest)
         tail = []
