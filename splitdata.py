@@ -1,4 +1,5 @@
 import os
+import datetime
 
 import splitutils
 
@@ -91,3 +92,13 @@ class SplitData(object) :
 
     def dispose(self, fname) :
         os.unlink(fname)
+
+    def log(self, msg) :
+        fname = self.fname + '.log'
+        now = datetime.datetime.now()
+        with open(fname, 'a+') as fh :
+            if type(msg) == type([]) :
+                for m in msg :
+                    fh.write('[{0}] {1}\n'.format(now, m))
+            else :
+                fh.write('[{0}] {1}\n'.format(now, msg))

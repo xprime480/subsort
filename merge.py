@@ -25,9 +25,12 @@ def merge_data(excluded, included, indexes) :
 def merge(dao) :
     excluded = dao.get_excluded()
     included, indexes = get_included(dao)
+    dao.log('Merge indexes: {0}'.format(indexes))
+    dao.log('Merge data: {0}'.format(included))
 
     final = merge_data(excluded, included, indexes)
     dao.set_data(final)
+    dao.log('Merge final count: {}'.format(len(final)))
 
     dao.dispose_included()
     dao.dispose_excluded()

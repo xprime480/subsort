@@ -49,7 +49,9 @@ def choose_indexes_by_tier_state(dao, number_of_tiers, total_count) :
 
 def split(dao, strategy):
     indexes = strategy(dao)
+    dao.log('Indexes chosen: {0}'.format(indexes))
     included, excluded = splitutils.partition_by_index(dao.get_data(), indexes)
+    dao.log('Data chosen: {0}'.format(included))
     dao.set_included(included, indexes)
     dao.set_excluded(excluded)
 

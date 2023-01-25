@@ -9,10 +9,15 @@ import splitdata
 class SupercycleState(object) :
     def __init__(self, dao, number_of_tiers, total_count):
         self.dao = dao
+
+        self.dao.log('Creating SuperCycleState with parameters number_of_tiers: {0}, total_count: {1}'.format(number_of_tiers, total_count))
+
         self.read_old_state()
         self.data = self.dao.get_data()
+        self.dao.log('Data length = {0}'.format(len(self.data)))
 
         self.compute_tier_data(number_of_tiers, total_count)
+        self.dao.log('Computed tier parameters: count_per_tier: {0} tier_sizes: {1} adjusted number_of_tiers: {2}'.format(self.count_per_tier, self.tier_sizes, self.tiers))
 
         self.bases = list(itertools.accumulate([0] + self.tier_sizes[:-1]))
         self.exclusions.intersection_update(set(self.data))
