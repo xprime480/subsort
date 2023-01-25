@@ -13,7 +13,7 @@ class SupercycleState(object) :
         self.count_per_tier = splitutils.make_geometric_series(total_count, number_of_tiers, 1, 1.0)
         self.read_old_state()
         self.data = self.dao.get_data()
-        self.tier_sizes = splitutils.make_geometric_series(len(self.data), self.tiers, self.count_per_tier[0])
+        self.tier_sizes = splitutils.make_geometric_series(len(self.data), self.tiers, self.count_per_tier[0], 1.618)
         self.bases = list(itertools.accumulate([0] + self.tier_sizes[:-1]))
         self.exclusions.intersection_update(set(self.data))
         self.initialize_indexes()
