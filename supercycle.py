@@ -30,8 +30,7 @@ class SupercycleState(object) :
             tier_sizes = splitutils.make_geometric_series(data_len, number_of_tiers, count_per_tier[0], 1.618)
             if 0 not in tier_sizes :
                 break
-            tier_sizes = [x for x in tier_sizes if x > 0]
-            number_of_tiers = len(tier_sizes)
+            number_of_tiers -= tier_sizes.count(0)
 
         self.tiers = number_of_tiers
         self.count_per_tier = count_per_tier
