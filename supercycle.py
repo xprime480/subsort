@@ -1,6 +1,5 @@
 import sys
 import itertools
-import os
 
 import numpy as np 
 
@@ -125,17 +124,7 @@ def get_shuffled_range(start, count) :
         return ix
 
 def get_dao(config) :
-    fname = 'numbers.dat'
-
-    if config :
-        root = config.get_or_default('file_root', '')
-        if root :
-            fname = root
-        path = config.get_or_default('file_path', '.')
-        if path :
-            fname = os.path.join(path, fname)
-
-    return splitdata.SplitData(fname)
+    return splitdata.get_dao(config)
 
 def get_indexer(config, dao) :
     return SupercycleState(dao, config)

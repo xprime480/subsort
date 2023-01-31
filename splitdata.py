@@ -102,3 +102,16 @@ class SplitData(object) :
                     fh.write('[{0}] {1}\n'.format(now, m))
             else :
                 fh.write('[{0}] {1}\n'.format(now, msg))
+
+def get_dao(config) :
+    fname = 'numbers.dat'
+
+    if config:
+        root = config.get_or_default('file_root', '')
+        if root:
+            fname = root
+        path = config.get_or_default('file_path', '.')
+        if path:
+            fname = os.path.join(path, fname)
+
+    return SplitData(fname)

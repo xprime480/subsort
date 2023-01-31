@@ -3,24 +3,8 @@ import importlib
 
 import numpy as np
 
-import supercycle
 import splitutils
-import splitdata
 import splitconfig
-
-def choose_indexes(len, spread, count):
-    if len <= count :
-        return list(range(len))
-
-    spread = max(min(len, spread), count)
-    maxbase = len - spread
-    base = 0
-    if maxbase > base :
-        np.random.randint(0, maxbase+1)
-
-    indexes = splitutils.get_subset_from_range(base, base+spread, count)
-    indexes.sort()
-    return indexes
 
 def choose_indexes_by_stride(len, count) :
     width = len // count
