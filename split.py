@@ -1,31 +1,8 @@
 import sys
 import importlib
 
-import numpy as np
-
 import splitutils
 import splitconfig
-
-def choose_indexes_by_stride(len, count) :
-    width = len // count
-    basemax = len - 1 - (count -1) * width
-    base = np.random.randint(0, basemax+1)
-    indexes = [base + i * width for i in range(count)]
-    return indexes
-
-def choose_indexes_by_tier(number_of_items, number_of_tiers, per_tier) :
-    tier_sizes = splitutils.make_geometric_series(number_of_items, number_of_tiers, 1)
-    if number_of_items == 0 or number_of_tiers <= 0 or len(tier_sizes) == 0 or tier_sizes[-1] <= 0:
-        return choose_indexes_by_stride(number_of_items, number_of_tiers * per_tier)
-
-    index_ranges = splitutils.compute_ranges(tier_sizes)
-    indexes = []
-    for l, h in index_ranges:
-        t = splitutils.get_subset_from_range(l, h, 2)
-        indexes.extend(t)
-
-    indexes.sort()
-    return indexes
 
 def split(dao, indexer):
     indexes = indexer.next()
