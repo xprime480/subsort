@@ -1,5 +1,6 @@
 import sys
 import itertools
+import os
 
 import numpy as np 
 
@@ -7,8 +8,11 @@ import splitutils
 import splitdata
 
 class SupercycleState(object) :
-    def __init__(self, dao, number_of_tiers, total_count):
+    def __init__(self, dao, config):
         self.dao = dao
+        self.config = config
+        number_of_tiers = config.int_or_default('tier_count', 10)
+        total_count = config.int_or_default('item_count', 10)
 
         self.dao.log('Creating SuperCycleState with parameters number_of_tiers: {0}, total_count: {1}'.format(number_of_tiers, total_count))
 
@@ -25,9 +29,10 @@ class SupercycleState(object) :
 
     def compute_tier_data(self, number_of_tiers, total_count) :
         data_len = len(self.data)
+        tier_ratio = self.config.float_or_default('tier_ratio', 1.618)
         while number_of_tiers > 0 :
             count_per_tier = splitutils.make_geometric_series(total_count, number_of_tiers, 1, 1.0)
-            tier_sizes = splitutils.make_geometric_series(data_len, number_of_tiers, count_per_tier[0], 1.618)
+            tier_sizes = splitutils.make_geometric_series(data_len, number_of_tiers, count_per_tier[0], tier_ratio)
             if 0 not in tier_sizes :
                 break
             number_of_tiers -= tier_sizes.count(0)
@@ -85,6 +90,9 @@ class SupercycleState(object) :
         row_index.sort()
         return row_index
 
+    def finalize(self) :
+        self.write_state()
+
     def extend_index(self, stub, index, needed):
         self.dao.log('Extending index {0} ({1} - {2})'.format(index, self.bases[index], self.bases[index] + self.tier_sizes[index]))
         rest = get_shuffled_range(self.bases[index], self.tier_sizes[index])
@@ -115,6 +123,22 @@ def get_shuffled_range(start, count) :
         ix = list(range(start,start+count))
         np.random.shuffle(ix)
         return ix
+
+def get_dao(config) :
+    fname = 'numbers.dat'
+
+    if config :
+        root = config.get_or_default('file_root', '')
+        if root :
+            fname = root
+        path = config.get_or_default('file_path', '.')
+        if path :
+            fname = os.path.join(path, fname)
+
+    return splitdata.SplitData(fname)
+
+def get_indexer(config, dao) :
+    return SupercycleState(dao, config)
 
 if __name__ == '__main__' :
     fname = 'numbers.dat'

@@ -1,10 +1,12 @@
 import sys
+import importlib
 
 import numpy as np
 
 import supercycle
 import splitutils
 import splitdata
+import splitconfig
 
 def choose_indexes(len, spread, count):
     if len <= count :
@@ -41,27 +43,37 @@ def choose_indexes_by_tier(number_of_items, number_of_tiers, per_tier) :
     indexes.sort()
     return indexes
 
-def choose_indexes_by_tier_state(dao, number_of_tiers, total_count) :
-    state = supercycle.SupercycleState(dao, number_of_tiers, total_count)
-    indexes = state.next()
-    state.write_state()
-    return indexes
-
-def split(dao, strategy):
-    indexes = strategy(dao)
+def split(dao, indexer):
+    indexes = indexer.next()
     dao.log('Split indexes: {0}'.format(indexes))
     included, excluded = splitutils.partition_by_index(dao.get_data(), indexes)
     dao.log('Split data: {0}'.format(included))
+
     dao.set_included(included, indexes)
     dao.set_excluded(excluded)
+    indexer.finalize()
 
 if __name__ == '__main__':
-    fname = 'numbers.dat'
-    def strategy(dao) :
-        return choose_indexes_by_tier_state(dao, 10, 10)
-
+    fname = 'numbers.config'
     if len(sys.argv) > 1 :
         fname = sys.argv[1]
 
-    dao = splitdata.SplitData(fname)
-    split(dao, strategy)
+    config = splitconfig.SplitConfig(fname)
+    if not config.is_ready() :
+        print('Error reading config')
+        sys.exit(1)
+
+    package = config.get_or_default('package', '')
+    if package :
+        try :
+            lib = importlib.import_module(package)
+        except Exception as ex :
+            print('Error importing pakage {0}: {1}'.format(package, ex))
+            
+        dao = lib.get_dao(config)
+        indexer = lib.get_indexer(config, dao)
+        split(dao, indexer)
+
+    else :
+        print('No valid package was specified, cannot split')
+

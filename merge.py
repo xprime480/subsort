@@ -1,6 +1,8 @@
 import sys
+import importlib
 
 import splitdata
+import splitconfig
 
 def get_included(dao) :
     data = dao.get_included()
@@ -40,5 +42,20 @@ if __name__ == '__main__' :
     if len(sys.argv) > 1:
         fname = sys.argv[1]
 
-    dao = splitdata.SplitData(fname)
-    merge(dao)
+    config = splitconfig.SplitConfig(fname)
+    if not config.is_ready():
+        print('Error reading config')
+        sys.exit(1)
+
+    package = config.get_or_default('package', '')
+    if package:
+        try:
+            lib = importlib.import_module(package)
+        except Exception as ex:
+            print('Error importing pakage {0}: {1}'.format(package, ex))
+
+        dao = lib.get_dao(config)
+        merge(dao)
+        
+    else:
+        print('No valid package was specified, cannot merge')
