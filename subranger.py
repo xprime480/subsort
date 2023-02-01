@@ -9,15 +9,18 @@ class SubrangerState(object) :
         self.dao = dao
         self.config = config
 
-        self.spread = config.int_or_default('spread', 1000000)
+        self.spread_parm = config.float_or_default('spread', 1.0)
         self.count = config.int_or_default('item_count', 10)
-        self.dao.log('Creating SuperCycleState with parameters spread: {0}, total_count: {1}'.format(self.spread, self.count))
+        self.dao.log('Creating SubrangerState with parameters spread_parm: {0}, total_count: {1}'.format(self.spread_parm, self.count))
 
         self.data = self.dao.get_data()
         self.datalen = len(self.data)
         self.dao.log('Data length = {0}'.format(self.datalen))
 
-        self.spread = max(min(self.datalen, self.spread), self.count)
+        if self.spread_parm > 1.0 :
+            self.spread = max(min(self.datalen, int(self.spread_parm)), self.count)
+        else :
+            self.spread = max(int(self.datalen * self.spread_parm), self.count)
 
         self.dao.log('Adjusted parameters: spread: {0}'.format(self.spread))
 
