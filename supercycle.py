@@ -11,23 +11,43 @@ class SupercycleState(object) :
         self.dao = dao
         self.config = config
         number_of_tiers = config.int_or_default('tier_count', 10)
-        total_count = config.int_or_default('item_count', 10)
+        item_count = config.int_or_default('item_count', 10)
+        offset = config.int_or_default('offset', 0)
+        window = config.int_or_default('window', 0)
 
-        self.dao.log('Creating SuperCycleState with parameters number_of_tiers: {0}, total_count: {1}'.format(number_of_tiers, total_count))
+        self.dao.log('Creating SuperCycleState with parameters number_of_tiers: {0}, total_count: {1}, offset: {2}, window: {3}'.format(number_of_tiers, item_count, offset, window))
 
         self.read_old_state()
         self.data = self.dao.get_data()
-        self.dao.log('Data length = {0}'.format(len(self.data)))
+        item_count = self.compute_window(offset, window, item_count)
+        self.dao.log('Data length = {0}, effective offset = {1}, effective window = {2}'.format(len(self.data), self.offset, self.window))
 
-        self.compute_tier_data(number_of_tiers, total_count)
+        self.compute_tier_data(number_of_tiers, item_count)
         self.dao.log('Computed tier parameters: count_per_tier: {0} tier_sizes: {1} adjusted number_of_tiers: {2}'.format(self.count_per_tier, self.tier_sizes, self.tiers))
 
-        self.bases = list(itertools.accumulate([0] + self.tier_sizes[:-1]))
+        self.bases = [self.offset + i for i in itertools.accumulate([0] + self.tier_sizes[:-1])]
         self.exclusions.intersection_update(set(self.data))
         self.initialize_indexes()
 
+    def compute_window(self, offset, window, total_count) :
+        length = len(self.data)
+        if total_count > length :
+            total_count = length
+
+        if window > length or window <= 0:
+            window = length
+        elif window < total_count :
+            window = total_count
+
+        offset = max(0, min(length - window, offset))
+
+        self.window = window
+        self.offset = offset
+
+        return total_count
+
     def compute_tier_data(self, number_of_tiers, total_count) :
-        data_len = len(self.data)
+        data_len = self.window
         tier_ratio = self.config.float_or_default('tier_ratio', 1.618)
         while number_of_tiers > 0 :
             count_per_tier = splitutils.make_geometric_series(total_count, number_of_tiers, 1, 1.0)
@@ -42,12 +62,10 @@ class SupercycleState(object) :
 
     def initialize_indexes(self):
         indexes = []
-        sum = 0
 
-        for c in self.tier_sizes:
-            ix = [i for i in get_shuffled_range(sum, c) if not self.is_excluded(i)]
+        for x in range(len(self.tier_sizes)):
+            ix = [i for i in get_shuffled_range(self.bases[x], self.tier_sizes[x]) if not self.is_excluded(i)]
             indexes.append(ix)
-            sum += c
 
         self.indexes = indexes
 
