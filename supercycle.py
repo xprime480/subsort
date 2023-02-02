@@ -1,5 +1,6 @@
 import sys
 import itertools
+import math
 
 import numpy as np 
 
@@ -12,8 +13,8 @@ class SupercycleState(object) :
         self.config = config
         number_of_tiers = config.int_or_default('tier_count', 10)
         item_count = config.int_or_default('item_count', 10)
-        offset = config.int_or_default('offset', 0)
-        window = config.int_or_default('window', 0)
+        offset = config.float_or_default('offset', 0)
+        window = config.float_or_default('window', 0)
 
         self.dao.log('Creating SuperCycleState with parameters number_of_tiers: {0}, total_count: {1}, offset: {2}, window: {3}'.format(number_of_tiers, item_count, offset, window))
 
@@ -34,11 +35,17 @@ class SupercycleState(object) :
         if total_count > length :
             total_count = length
 
-        if window > length or window <= 0:
+        if 0 < window <= 1 :
+            window *= length
+        elif window > length or window <= 0:
             window = length
         elif window < total_count :
             window = total_count
+        window = math.floor(window)
 
+        if 0 < offset <= 1 :
+            offset *= length
+            offset = math.floor(offset)
         offset = max(0, min(length - window, offset))
 
         self.window = window
