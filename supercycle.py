@@ -6,6 +6,7 @@ import numpy as np
 
 import splitutils
 import splitdata
+import splitconfig
 
 class SupercycleState(object) :
     def __init__(self, dao, config):
@@ -47,6 +48,7 @@ class SupercycleState(object) :
             offset *= length
             offset = math.floor(offset)
         offset = max(0, min(length - window, offset))
+        offset = math.floor(offset)
 
         self.window = window
         self.offset = offset
@@ -155,17 +157,16 @@ def get_indexer(config, dao) :
     return SupercycleState(dao, config)
 
 if __name__ == '__main__' :
-    fname = 'numbers.dat'
+    fname = 'numbers.config'
     if len(sys.argv) > 1:
         fname = sys.argv[1]
 
-    count = 0
-    if len(sys.argv) > 2 :
-        count = int(sys.argv[2])
 
-    dao = splitdata.SplitData(fname)
-    state = SupercycleState(dao, 5, 7)
+    config = splitconfig.SplitConfig(fname)
+    dao = get_dao(config)
+    state = SupercycleState(dao, config)
 
+    count = config.int_or_default('test_count', 0)
     for _ in range(count) : 
         sample = state.next()
         print(sample)

@@ -6,6 +6,7 @@ import splitconfig
 
 def split(dao, indexer):
     indexes = indexer.next()
+
     dao.log('Split indexes: {0}'.format(indexes))
     included, excluded = splitutils.partition_by_index(dao.get_data(), indexes)
     dao.log('Split data: {0}'.format(included))

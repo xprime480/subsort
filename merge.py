@@ -55,7 +55,11 @@ if __name__ == '__main__' :
             print('Error importing pakage {0}: {1}'.format(package, ex))
 
         dao = lib.get_dao(config)
-        merge(dao)
+        
+        try : 
+            merge(dao)
+        except Exception as ex :
+            print('Unable to perform merge:', ex)
         
     else:
         print('No valid package was specified, cannot merge')
