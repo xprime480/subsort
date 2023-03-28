@@ -58,9 +58,11 @@ class SupercycleState(object) :
     def compute_tier_data(self, number_of_tiers, total_count) :
         data_len = self.window
         tier_ratio = self.config.float_or_default('tier_ratio', 1.618)
+        first_tier_min = self.config.int_or_default('first_tier_min', 1)
         while number_of_tiers > 0 :
             count_per_tier = splitutils.make_geometric_series(total_count, number_of_tiers, 1, 1.0)
-            tier_sizes = splitutils.make_geometric_series(data_len, number_of_tiers, count_per_tier[0], tier_ratio)
+            first_tier_min_tmp = max(first_tier_min, count_per_tier[0])
+            tier_sizes = splitutils.make_geometric_series(data_len, number_of_tiers, first_tier_min_tmp, tier_ratio)
             if 0 not in tier_sizes :
                 break
             number_of_tiers -= tier_sizes.count(0)
