@@ -128,3 +128,88 @@ func TestGetDataWithBlankline(t *testing.T) {
 	}
 }
 
+func TestSubsetFromRangeEmptySet(t *testing.T) {
+	subset := GetSubsetFromRange(0, 0, 5)
+	if len(subset) > 0 {
+		t.Fatalf("Expected empty subset, got %v", subset)
+	}
+}
+
+func TestSubsetFromRangeZeroCount(t *testing.T) {
+	subset := GetSubsetFromRange(0, 10, 0)
+	if len(subset) > 0 {
+		t.Fatalf("Expected empty subset, got %v", subset)
+	}
+}
+
+func TestSubsetFromRangeAllCount(t *testing.T) {
+	subset := GetSubsetFromRange(0, 10, 10)
+	if len(subset) != 10 {
+		t.Fatalf("Expected subset of size 10, got %v", subset)
+	}
+
+	min, max, distinct := getStats(subset)
+	if min != 0 || max != 9 {
+		t.Fatalf("Found items out of range 0 - 9: %v", subset)
+	}
+	if distinct != 10 {
+		t.Fatalf("Expected 10 items, got %d: %v", distinct, subset)
+	}
+}
+
+func TestSubsetFromRangeAllExcessCount(t *testing.T) {
+	subset := GetSubsetFromRange(0, 10, 15)
+	if len(subset) != 10 {
+		t.Fatalf("Expected subset of size 10, got %v", subset)
+	}
+
+	min, max, distinct := getStats(subset)
+	if min != 0 || max != 9 {
+		t.Fatalf("Found items out of range 0 - 9: %v", subset)
+	}
+	if distinct != 10 {
+		t.Fatalf("Expected 10 items, got %d: %v", distinct, subset)
+	}
+}
+func TestSubsetFromRangeAllCountOffset(t *testing.T) {
+	subset := GetSubsetFromRange(10, 20, 10)
+	if len(subset) != 10 {
+		t.Fatalf("Expected subset of size 10, got %v", subset)
+	}
+
+	min, max, distinct := getStats(subset)
+	if min != 10 || max != 19 {
+		t.Fatalf("Found items out of range 10 - 19: %v", subset)
+	}
+	if distinct != 10 {
+		t.Fatalf("Expected 10 distinct items, got %d: %v", distinct, subset)
+	}
+}
+
+func TestSubsetFromRangeAllCountOffsetPartial(t *testing.T) {
+	subset := GetSubsetFromRange(10, 20, 5)
+	if len(subset) != 5 {
+		t.Fatalf("Expected subset of size 5, got %v", subset)
+	}
+
+	min, max, distinct := getStats(subset)
+	if min < 10 || max > 19 {
+		t.Fatalf("Found items out of range 10 - 19: %v", subset)
+	}
+	if distinct != 5 {
+		t.Fatalf("Expected 5 distinct items, got %d: %v", distinct, subset)
+	}
+}
+
+func getStats(set [] int) (int, int, int) {
+	min, max := set[0], set[0]
+	distinct := make(map[int]bool, 0)
+
+	for _, v := range set {
+		if v <= min { min = v }
+		if v >= max { max = v }
+		distinct[v] = true
+	}
+
+	return min, max, len(distinct)
+}
