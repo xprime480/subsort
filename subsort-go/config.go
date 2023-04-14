@@ -34,7 +34,7 @@ func buildDict(lines []string) map[string]string {
 }
 
 func NewConfig(r io.Reader) (*Config, error) {
-	lines, err := getNonBlankLinesFromBuffer(r)
+	lines, err := GetNonBlankLinesFromBuffer(r)
 	if err != nil {
 		return nil, err
 	}
