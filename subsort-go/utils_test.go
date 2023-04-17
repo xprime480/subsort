@@ -201,6 +201,55 @@ func TestSubsetFromRangeAllCountOffsetPartial(t *testing.T) {
 	}
 }
 
+func TestMakeGeometricSeriesNegativeSum(t *testing.T) {
+	series := MakeGeometricSeries(-1, 5, 0)
+	if len(series) != 5 {
+		t.Fatalf("Expected 5 values, got %v", series)
+	}
+
+	min, max, _ := getStats(series)
+	if min != 0 || max != 0 {
+		t.Fatalf("Expected all zeros, got %v", series)
+	}
+}
+
+func TestMakeGeometricSeriesNegativeCount(t *testing.T) {
+	series := MakeGeometricSeries(100, -5, 0)
+	if len(series) != 0 {
+		t.Fatalf("Expected 0 values, got %v", series)
+	}
+}
+
+func TestMakeGeometricSeriesUnityCount(t *testing.T) {
+	series := MakeGeometricSeries(100, 1, 0)
+	if len(series) != 1 {
+		t.Fatalf("Expected 1 values, got %v", series)
+	}
+	if series[0] != 100 {
+		t.Fatalf("Expected value [100], got %v", series)
+	}
+}
+
+func TestMakeGeometricSeriesNegativeRatio(t *testing.T) {
+	series := MakeGeometricSeries(100, 2, 1, -1.0)
+	assertSeriesEquals(series, makeSeries(100, 0), t)
+}
+
+func TestMakeGeometricSeriesDefaultRatio(t *testing.T) {
+	series := MakeGeometricSeries(62, 5, 1)
+	assertSeriesEquals(series, makeSeries(2, 4, 8, 16, 32), t)
+}
+
+func TestMakeGeometricSeriesDefaultRatioTooFewTotal(t *testing.T) {
+	series := MakeGeometricSeries(60, 5, 1)
+	assertSeriesEquals(series, makeSeries(2, 4, 8, 15, 31), t)
+}
+
+func TestMakeGeometricSeriesDefaultRatioHonorsFirstTermMinimum(t *testing.T) {
+	series := MakeGeometricSeries(60, 5, 3)
+	assertSeriesEquals(series, makeSeries(3, 6, 12, 24, 15), t)
+}
+
 func getStats(set [] int) (int, int, int) {
 	min, max := set[0], set[0]
 	distinct := make(map[int]bool, 0)
@@ -212,4 +261,23 @@ func getStats(set [] int) (int, int, int) {
 	}
 
 	return min, max, len(distinct)
+}
+
+func makeSeries(values ...int) []int {
+	series := make([]int, 0, len(values))
+	return append(series, values...)
+}
+
+func assertSeriesEquals(actual []int, expected []int, t *testing.T) {
+	actualLength, expectedLength := len(actual), len(expected)
+	if expectedLength != actualLength {
+		t.Fatalf("Expected %d values (%v), got %d (%v)", expectedLength, expected, actualLength, actual)
+	}
+
+	for i, expectedValue := range expected {
+		actualValue := actual[i]
+		if expectedValue != actualValue {
+			t.Fatalf("Series differ at index %d, expected %d got %d", i, expectedValue, actualValue)
+		}
+	}
 }
