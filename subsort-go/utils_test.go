@@ -250,6 +250,23 @@ func TestMakeGeometricSeriesDefaultRatioHonorsFirstTermMinimum(t *testing.T) {
 	assertSeriesEquals(series, makeSeries(3, 6, 12, 24, 15), t)
 }
 
+func TestMakeGeometricSeriesTierRatioOne(t *testing.T) {
+	series := MakeGeometricSeries(11, 5, 1, 1.0)
+	assertSeriesEquals(series, makeSeries(2, 2, 2, 2, 3), t)
+}
+
+func TestComputeRangesEmptyInput(t *testing.T) {
+	ranges := ComputeRanges(makeSeries())
+	expected := make([]Range, 0, 0)
+	assertSeriesEquals(ranges, expected, t)
+}
+
+func TestComputeRangesSimpleInput(t *testing.T) {
+	ranges := ComputeRanges(makeSeries(1, 2, 3, 4))
+	expected := []Range { {0, 1}, {1, 3}, {3, 6}, {6, 10} }
+	assertSeriesEquals(ranges, expected, t)
+}
+
 func getStats(set [] int) (int, int, int) {
 	min, max := set[0], set[0]
 	distinct := make(map[int]bool, 0)
@@ -268,7 +285,7 @@ func makeSeries(values ...int) []int {
 	return append(series, values...)
 }
 
-func assertSeriesEquals(actual []int, expected []int, t *testing.T) {
+func assertSeriesEquals[T comparable](actual []T, expected []T, t *testing.T) {
 	actualLength, expectedLength := len(actual), len(expected)
 	if expectedLength != actualLength {
 		t.Fatalf("Expected %d values (%v), got %d (%v)", expectedLength, expected, actualLength, actual)
@@ -277,7 +294,7 @@ func assertSeriesEquals(actual []int, expected []int, t *testing.T) {
 	for i, expectedValue := range expected {
 		actualValue := actual[i]
 		if expectedValue != actualValue {
-			t.Fatalf("Series differ at index %d, expected %d got %d", i, expectedValue, actualValue)
+			t.Fatalf("Series differ at index %d, expected %v got %v", i, expectedValue, actualValue)
 		}
 	}
 }

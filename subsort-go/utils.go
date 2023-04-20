@@ -9,6 +9,11 @@ import (
 	"strings"
 )
 
+type Range struct {
+	Low  int
+	High int
+}
+
 func GetLinesFromBuffer(r io.Reader) ([]string, error) {
 	lines := make([]string, 0, 20)
 
@@ -98,12 +103,29 @@ func MakeGeometricSeries(sumOfTerms, termCount, firstTermMinimum int, ratios ...
 		}
 		return data
 	}
+	if ratio == 1.0 {
+		temp := sumOfTerms / termCount
+		return makeGeometricSeriesIncrementally(sumOfTerms, termCount, temp, ratio)
+	}
 
 	data = makeGeometricSeriesFast(sumOfTerms, termCount, ratio)
 	if data[0] < firstTermMinimum {
 		data = makeGeometricSeriesIncrementally(sumOfTerms, termCount, firstTermMinimum, ratio)
 	}
 
+	return data
+}
+
+func ComputeRanges(breaks []int) []Range {
+	data := make([]Range, len(breaks), len(breaks))
+	lo, hi := 0, 0
+	for index, value := range breaks {
+		hi += value
+		r := Range{lo, hi}
+		data[index] = r
+		lo += value
+
+	} 
 	return data
 }
 
@@ -183,6 +205,11 @@ func makeGeometricSeriesIncrementally(sumOfTerms, termCount, firstTermMinimum in
 	data := make([]int, termCount)
 
 	for i := 0 ; sumOfTerms > 0 ; i++ {
+		if i == termCount {
+			data[i-1] += sumOfTerms // any leftovers go in the last bucket
+			break
+		}
+
 		temp := firstTermMinimum
 		if sumOfTerms < temp {
 			temp = sumOfTerms
@@ -190,8 +217,8 @@ func makeGeometricSeriesIncrementally(sumOfTerms, termCount, firstTermMinimum in
 
 		data[i] = temp
 		sumOfTerms -= temp
-		firstTermMinimum *= 2
+		firstTermMinimum = int(math.Ceil(float64(firstTermMinimum) * ratio))
 	}
-	
+
 	return data
 }
