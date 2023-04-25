@@ -129,6 +129,20 @@ func ComputeRanges(breaks []int) []Range {
 	return data
 }
 
+func PartitionByIndex[T any](data []T, indexes map[int]bool) (included, excluded []T) {
+	included, excluded = make([]T, 0, len(data)), make([]T, 0, len(data))
+	for index, value := range data {
+		v, _ := indexes[index]
+		if v {
+			included = append(included, value)
+		} else {
+			excluded = append(excluded, value)
+		}
+	}
+
+	return
+}
+
 func filter(lines []string, f func(string) bool) []string {
 	filtered := make([]string, 0, len(lines))
 	for _, line := range lines {

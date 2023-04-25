@@ -256,7 +256,7 @@ func TestMakeGeometricSeriesTierRatioOne(t *testing.T) {
 }
 
 func TestComputeRangesEmptyInput(t *testing.T) {
-	ranges := ComputeRanges(makeSeries())
+	ranges := ComputeRanges(makeSeries[int]())
 	expected := make([]Range, 0, 0)
 	assertSeriesEquals(ranges, expected, t)
 }
@@ -265,6 +265,37 @@ func TestComputeRangesSimpleInput(t *testing.T) {
 	ranges := ComputeRanges(makeSeries(1, 2, 3, 4))
 	expected := []Range { {0, 1}, {1, 3}, {3, 6}, {6, 10} }
 	assertSeriesEquals(ranges, expected, t)
+}
+
+func TestPartitionByIndexNoData(t *testing.T) {
+	empty := makeSeries[string]()
+	include, exclude := PartitionByIndex(empty, makeSet(1, 3, 5))
+	assertSeriesEquals(include, empty, t)
+	assertSeriesEquals(exclude, empty, t)
+}
+
+func TestPartitionByIndexAllIncluded(t *testing.T) {
+	data := makeSeries("big", "bad", "wolf")
+	indexes := makeSet(0, 1, 2)
+	include, exclude := PartitionByIndex(data, indexes)
+	assertSeriesEquals(include, data, t)
+	assertSeriesEquals(exclude, makeSeries[string](), t)
+}
+
+func TestPartitionByIndexAllExcluded(t *testing.T) {
+	data := makeSeries("big", "bad", "wolf")
+	indexes := makeSet()
+	include, exclude := PartitionByIndex(data, indexes)
+	assertSeriesEquals(include, makeSeries[string](), t)
+	assertSeriesEquals(exclude, data, t)
+}
+
+func TestPartitionByIndexSomeExcluded(t *testing.T) {
+	data := makeSeries("big", "bad", "wolf")
+	indexes := makeSet(1)
+	include, exclude := PartitionByIndex(data, indexes)
+	assertSeriesEquals(include, makeSeries("bad"), t)
+	assertSeriesEquals(exclude, makeSeries("big", "wolf"), t)
 }
 
 func getStats(set [] int) (int, int, int) {
@@ -280,9 +311,17 @@ func getStats(set [] int) (int, int, int) {
 	return min, max, len(distinct)
 }
 
-func makeSeries(values ...int) []int {
-	series := make([]int, 0, len(values))
+func makeSeries[T any](values ...T) []T {
+	series := make([]T, 0, len(values))
 	return append(series, values...)
+}
+
+func makeSet(values ...int) map[int]bool {
+	data := make(map[int]bool, 0)
+	for _, v := range values {
+		data[v] = true
+	}
+	return data
 }
 
 func assertSeriesEquals[T comparable](actual []T, expected []T, t *testing.T) {
