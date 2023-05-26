@@ -9,7 +9,8 @@ def get_data(fname):
 
     with open(fname) as fh:
         tmp = fh.readlines()
-    return [v.rstrip() for v in tmp]
+    stripped = [v.rstrip() for v in tmp]
+    return [v for v in stripped if v != '']
 
 def get_subset_from_range(rmin, rmax, count):
     """Given a range RMIN to RMAX, return COUNT integers in range.
@@ -37,11 +38,12 @@ def make_geometric_series(sum_of_terms, term_count, first_term_minimum, ratio=2.
 
     Each term is an integer, so the ratios may not exactly equal the
     requested value due to rounding.  The computation for each term is
-    rounded up, and in no case will the sum be different than requested.
+    rounded up, and the sum be exactly what is requested, except in
+    the special cases below.
 
     Special cases:
         If requested sum is non-positive, a sequence of zeros is returned
-        If the count of terms is non-positive, and empty list is returned
+        If the count of terms is non-positive, an empty list is returned
         If the ratio is non-positive, the entire sum is in the first term and
             remaining terms are 0.
     """
