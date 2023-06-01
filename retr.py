@@ -6,7 +6,7 @@ def retr(item_count, target_count, target_buckets, total_buckets) :
     ratio_hi = 30.0
     iterations = 0
 
-    while True and iterations < 40 :
+    while ratio_lo < ratio_hi and iterations < 40 :
         iterations += 1
         ratio = (ratio_lo + ratio_hi) / 2
 
@@ -19,6 +19,13 @@ def retr(item_count, target_count, target_buckets, total_buckets) :
             ratio_lo = ratio
         else :
             ratio_hi = ratio
+
+    for d in range(20) :
+        r = round(ratio, d)
+        s = sum(splitutils.make_geometric_series(item_count, total_buckets, 1, ratio=r)[:target_buckets])
+        if s == target_count :
+            ratio = r
+            break
 
     print('tier_ratio = {}'.format(ratio))
 
