@@ -7,10 +7,13 @@ import numpy as np
 def get_data(fname):
     """Given a filename FNAME, return list of lines with trailing whitespace stripped."""
 
-    with open(fname) as fh:
-        tmp = fh.readlines()
-    stripped = [v.rstrip() for v in tmp]
-    return [v for v in stripped if v != '']
+    try :
+        with open(fname) as fh:
+            tmp = fh.readlines()
+        stripped = [v.rstrip() for v in tmp]
+        return [v for v in stripped if v != '']
+    except :
+        return []
 
 def get_subset_from_range(rmin, rmax, count):
     """Given a range RMIN to RMAX, return COUNT integers in range.

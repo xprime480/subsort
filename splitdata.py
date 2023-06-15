@@ -10,6 +10,7 @@ class SplitData(object) :
         self.included = None
         self.excluded = None
         self.state = None
+        self.new = None
 
     def get_data(self) :
         if not self.data :
@@ -60,7 +61,7 @@ class SplitData(object) :
     def get_included_fname(self) :
         return self.fname + '.out'
 
-    def get_excluded(self) :
+    def get_excluded(self):
         if not self.excluded:
             fname = self.get_excluded_fname()
             self.excluded = splitutils.get_data(fname)
@@ -69,7 +70,8 @@ class SplitData(object) :
     def set_excluded(self, excluded):
         self.excluded = excluded
         fname = self.get_excluded_fname()
-        def writer(fh) :
+
+        def writer(fh):
             fh.write('\n'.join(excluded))
             fh.write('\n')
 
@@ -81,7 +83,26 @@ class SplitData(object) :
     def get_excluded_fname(self):
         return self.fname + '.rem'
 
-    def write_header_line(self, fh, indexes) :
+    def get_new(self):
+        if not self.new:
+            fname = self.get_new_fname()
+            self.new = splitutils.get_data(fname)
+        return self.new
+
+    def set_new(self, new):
+        self.new = new
+        fname = self.get_new_fname()
+
+        def writer(fh):
+            fh.write('\n'.join(new))
+            fh.write('\n')
+
+        splitutils.write_or_unlink(self.new, fname, writer)
+
+    def get_new_fname(self):
+        return self.fname + '.new'
+
+    def write_header_line(self, fh, indexes):
         fh.write('# ')
         fh.write(' '.join([str(i) for i in indexes]))
         fh.write('\n')
