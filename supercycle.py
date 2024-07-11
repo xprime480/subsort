@@ -12,6 +12,20 @@ class SupercycleState(object) :
     def __init__(self, dao, config):
         self.dao = dao
         self.config = config
+
+        self.read_old_state()
+        self.data = self.dao.get_data()
+        self.using_raw_indexes = False
+
+        indexes = config.list_of_int_or_default('indexes', [])
+        indexes = [i for i in indexes if i >= 0 and i < len(self.data)]
+        indexes = list(set(indexes))
+        if indexes :
+            self.dao.log('Creating SuperCycleState with stipulated indexes {0}'.format(indexes))
+            self.indexes = indexes
+            self.using_raw_indexes = True
+            return
+
         number_of_tiers = config.int_or_default('tier_count', 10)
         item_count = config.int_or_default('item_count', 10)
         offset = config.float_or_default('offset', 0)
@@ -19,8 +33,6 @@ class SupercycleState(object) :
 
         self.dao.log('Creating SuperCycleState with parameters number_of_tiers: {0}, total_count: {1}, offset: {2}, window: {3}'.format(number_of_tiers, item_count, offset, window))
 
-        self.read_old_state()
-        self.data = self.dao.get_data()
         item_count = self.compute_window(offset, window, item_count)
         self.dao.log('Data length = {0}, effective offset = {1}, effective window = {2}'.format(len(self.data), self.offset, self.window))
 
@@ -57,6 +69,26 @@ class SupercycleState(object) :
 
     def compute_tier_data(self, number_of_tiers, total_count) :
         data_len = self.window
+
+        tier_sizes = self.config.list_of_int_or_default('tier_sizes', [])
+        count_per_tier = self.config.list_of_int_or_default('count_per_tier', [])
+        if tier_sizes and count_per_tier :
+            # no sanity checking, assume the user has all their marbles
+            temp_total_size = sum(tier_sizes)
+            temp_total_count = sum(count_per_tier)
+            remainder_total_size = total_count - temp_total_count
+            remainder_total_count = data_len - temp_total_size
+            if remainder_total_count > 0 and remainder_total_size > 0 :
+                tier_sizes.append(remainder_total_count)
+                count_per_tier.append(remainder_total_size)
+
+            self.tiers = len(tier_sizes)
+            self.tier_sizes = tier_sizes[:]
+            self.count_per_tier = count_per_tier[:]
+
+            return
+
+
         tier_ratio = self.config.float_or_default('tier_ratio', 1.618)
         first_tier_min = self.config.int_or_default('first_tier_min', 1)
         while number_of_tiers > 0 :
@@ -96,23 +128,26 @@ class SupercycleState(object) :
         self.dao.set_state(self.exclusions)
 
     def next(self) :
-        indexes = self.indexes
-        per_tier = self.count_per_tier
+        if self.using_raw_indexes :
+            row_index = self.indexes[:]
+        else :
+            indexes = self.indexes
+            per_tier = self.count_per_tier
 
-        self.dao.log('Initial index sizes: {0}'.format([len(ix) for ix in indexes]))
+            self.dao.log('Initial index sizes: {0}'.format([len(ix) for ix in indexes]))
 
-        row_index = []
-        for i in range(len(indexes)) :
-            needed = per_tier[i]
-            ix = indexes[i]
-            if len(ix) < needed :
-                ix = self.extend_index(ix, i, needed)
+            row_index = []
+            for i in range(len(indexes)) :
+                needed = per_tier[i]
+                ix = indexes[i]
+                if len(ix) < needed :
+                    ix = self.extend_index(ix, i, needed)
 
-            t = ix[:needed]
-            row_index.extend(t)
+                t = ix[:needed]
+                row_index.extend(t)
 
-            u = ix[needed:]
-            indexes[i] = u
+                u = ix[needed:]
+                indexes[i] = u
 
         self.add_to_exclusions(row_index)
         row_index.sort()

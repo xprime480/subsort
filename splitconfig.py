@@ -53,6 +53,14 @@ class SplitConfig(object) :
 
     def float_or_default(self, key, default) :
         return self.get_or_default(key, default, lambda x: float(x))
+    
+    def list_of_int_or_default(self, key, default) :
+        value = self.get_or_default(key, '')
+        if not value :
+            return default
+        
+        items = value.split(',')
+        return [int(i) for i in items]
 
     def is_ready(self) :
         return self.state == READY
